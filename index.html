@@ -749,7 +749,7 @@ footer p{font-size:0.78rem;}
       </div>
       <div class="form-row3">
         <div class="form-group"><label>Genre</label><input type="text" id="bf-genre" placeholder="Fiksi, Sains, dll"/></div>
-        <div class="form-group"><label>Emoji Cover</label><input type="text" id="bf-emoji" placeholder="📖" maxlength="4"/></div>
+        <div class="form-group"><label>Cover Buku</label><input type="file" id="bf-cover" accept="image/*"/></div>
         <div class="form-group"><label>Tipe</label><select id="bf-type" onchange="togglePriceField()"><option value="free">Gratis</option><option value="paid">Sewa (Berbayar)</option></select></div>
       </div>
       <div class="form-group" id="priceGroup" style="display:none;"><label>Harga Sewa (Rp/pinjam)</label><input type="number" id="bf-price" placeholder="3000"/></div>
@@ -1374,7 +1374,7 @@ function saveBook(){
   const title=document.getElementById('bf-title').value.trim();
   const author=document.getElementById('bf-author').value.trim();
   const genre=document.getElementById('bf-genre').value.trim();
-  const emoji=document.getElementById('bf-emoji').value.trim()||'📖';
+  const coverInput = document.getElementById("bf-cover");const file = coverInput.files[0];let coverURL = "";if (file) {coverURL = URL.createObjectURL(file);}
   const type=document.getElementById('bf-type').value;
   const price=parseInt(document.getElementById('bf-price').value)||0;
   const desc=document.getElementById('bf-desc').value.trim();
@@ -1520,3 +1520,4 @@ updateNav();renderBooks();
 </script>
 </body>
 </html>
+
