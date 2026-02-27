@@ -1,7 +1,10 @@
+import React from "react";
+
 export default function Page() {
   return (
-    <div>
-      <h1>Halaman Syarat & Ketentuan</h1>
-    </div>
+    <section>
+      <h1>Syarat dan Ketentuan</h1>
+      <p>Halaman ini sedang dimuat...</p>
+    </section>
   );
 }
