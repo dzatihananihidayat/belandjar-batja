@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  /* Menambahkan warna khas Belandjar Batja */
+  --color-batja-beige: #F9F7F2;
+  --color-batja-green: #2D4636;
+  --color-batja-terracotta: #D97757;
+
+  /* Menambahkan font klasik */
+  --font-serif: var(--font-lora), serif;
+}
+
+/* Base style agar latar belakang otomatis beige */
+@layer base {
+  body {
+    @apply bg-batja-beige text-batja-green;
+  }
+}

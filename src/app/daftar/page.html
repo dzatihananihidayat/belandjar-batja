@@ -1,0 +1,193 @@
+"use client";
+
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function DaftarPage() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [fileKTP, setFileKTP] = useState(null);
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    nickname: "",
+    usernameDb: "",
+    whatsapp: "",
+    socialMedia: "",
+    readingTracker: "",
+    receiverName: "",
+    shippingAddress: "",
+    surveyFamiliarity: "",
+    surveyMotivation: "",
+    hasAgreed: null,
+  });
+
+  const handleDaftar = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // 1. Auth Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+      if (authError) throw authError;
+
+      const userId = authData.user?.id;
+      let ktpUrl = "";
+
+      // 2. Upload KTP (Poin 2)
+      if (fileKTP && userId) {
+        const fileExt = fileKTP.name.split('.').pop();
+        const filePath = `ktp/${userId}-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('id_cards').upload(filePath, fileKTP);
+        if (uploadError) throw uploadError;
+        const { data } = supabase.storage.from('id_cards').getPublicUrl(filePath);
+        ktpUrl = data.publicUrl;
+      }
+
+      // 3. Simpan Profil Lengkap (10 Poin + Survei)
+      const { error: profileError } = await supabase.from('profiles').insert([{
+        id: userId,
+        full_name: formData.fullName,
+        nickname: formData.nickname,
+        username_db: formData.usernameDb,
+        whatsapp_number: formData.whatsapp,
+        social_media_link: formData.socialMedia,
+        reading_tracker_link: formData.readingTracker,
+        receiver_name: formData.receiverName,
+        shipping_address: formData.shippingAddress,
+        survey_familiarity: formData.surveyFamiliarity,
+        survey_motivation: formData.surveyMotivation,
+        ktp_photo_url: ktpUrl,
+        has_agreed: formData.hasAgreed
+      }]);
+
+      if (profileError) throw profileError;
+
+      alert("Lamaran berhasil dikirim! Mohon tunggu proses verifikasi.");
+      router.push("/");
+    } catch (err) {
+      alert("Terjadi kendala: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-batja-beige flex items-center justify-center p-6 py-12 text-batja-green">
+      <div className="bg-white/70 backdrop-blur-lg p-8 md:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-2xl border border-batja-green/5">
+        
+        {/* Progress Indicator */}
+        <div className="flex justify-between mb-10 px-4">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className={`h-1.5 w-full mx-1 rounded-full ${step >= s ? 'bg-batja-green' : 'bg-batja-green/10'}`} />
+          ))}
+        </div>
+
+        {/* STEP 1: VISI & MISI */}
+        {step === 1 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="font-serif text-3xl italic mb-6 text-center">Salam Kenal, Teman Batja</h2>
+            <div className="space-y-4 text-justify font-light opacity-90 leading-relaxed">
+              <p><strong>Belandjar Batja</strong> adalah perpustakaan daring nirlaba milik <strong>Zakia Liland (@belandjar)</strong>...</p>
+              <p>Silakan baca <Link href="/rules" className="underline font-medium">syarat & ketentuan</Link> sebelum mendaftar.</p>
+            </div>
+            <button onClick={() => setStep(2)} className="w-full bg-batja-green text-batja-beige py-4 rounded-full font-medium mt-10 hover:scale-[1.01] transition-all">
+              Satu Visi dengan Zakia? Mari Gabung
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: IDENTITAS DASAR */}
+        {step === 2 && (
+          <div className="space-y-6 animate-in fade-in">
+            <h3 className="font-serif text-2xl italic">Kenalan Dasar</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input placeholder="Nama Panggilan *" className="p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+                onChange={(e) => setFormData({...formData, nickname: e.target.value})} />
+              <input placeholder="Username Unik *" className="p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+                onChange={(e) => setFormData({...formData, usernameDb: e.target.value.toLowerCase().replace(/\s/g, '')})} />
+            </div>
+            <input type="email" placeholder="Email Aktif *" className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+              onChange={(e) => setFormData({...formData, email: e.target.value})} />
+            <input type="password" placeholder="Buat Password *" className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+              onChange={(e) => setFormData({...formData, password: e.target.value})} />
+            <input placeholder="Tautan Media Sosial *" className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+              onChange={(e) => setFormData({...formData, socialMedia: e.target.value})} />
+            
+            <div className="flex gap-4 pt-4">
+              <button onClick={() => setStep(1)} className="flex-1 py-4 rounded-full border border-batja-green font-medium">Kembali</button>
+              <button onClick={() => setStep(3)} className="flex-1 bg-batja-green text-batja-beige py-4 rounded-full font-medium">Lanjut ke Survei</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: SURVEI PENGGUNA */}
+        {step === 3 && (
+          <div className="space-y-6 animate-in fade-in">
+            <h3 className="font-serif text-2xl italic">Kamu & Perpus Virtual</h3>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Seberapa familiar kamu dengan perpus virtual? *</label>
+              <select className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 outline-none"
+                onChange={(e) => setFormData({...formData, surveyFamiliarity: e.target.value})}>
+                <option value="">Pilih...</option>
+                <option value="Sangat">Sangat Familiar</option>
+                <option value="Cukup">Cukup Familiar</option>
+                <option value="Baru">Baru Tahu</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mengapa kami harus mempercayakan koleksi kami kepadamu? *</label>
+              <textarea placeholder="Ceritakan motivasi dan komitmenmu..." className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 h-32 outline-none"
+                onChange={(e) => setFormData({...formData, surveyMotivation: e.target.value})} />
+            </div>
+            <div className="flex gap-4 pt-4">
+              <button onClick={() => setStep(2)} className="flex-1 py-4 rounded-full border border-batja-green font-medium">Kembali</button>
+              <button onClick={() => setStep(4)} className="flex-1 bg-batja-green text-batja-beige py-4 rounded-full font-medium">Langkah Terakhir</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: PRIVASI & LOGISTIK */}
+        {step === 4 && (
+          <div className="space-y-6 animate-in fade-in">
+            <h3 className="font-serif text-2xl italic">Finalisasi & Logistik</h3>
+            <input placeholder="Nama Lengkap Sesuai KTP *" className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 outline-none" 
+              onChange={(e) => setFormData({...formData, fullName: e.target.value})} />
+            
+            <div className="p-5 bg-batja-green/5 rounded-2xl border border-dashed border-batja-green/20">
+              <label className="text-xs font-bold block mb-2 opacity-60">FOTO KTP (Jaminan Komitmen) *</label>
+              <input type="file" accept="image/*" className="text-xs" onChange={(e) => setFileKTP(e.target.files[0])} />
+            </div>
+
+            <textarea placeholder="Alamat Pengiriman Lengkap (Beserta Patokan) *" className="w-full p-4 rounded-2xl bg-white border border-batja-green/10 h-28 outline-none" 
+              onChange={(e) => setFormData({...formData, shippingAddress: e.target.value})} />
+
+            <div className="p-4 bg-batja-green/5 rounded-2xl italic text-xs leading-relaxed">
+              "Dengan ini, saya menyatakan telah membaca syarat & ketentuan..."
+              <div className="flex gap-4 mt-3">
+                <button onClick={() => setFormData({...formData, hasAgreed: true})} className={`flex-1 p-2 rounded-lg border ${formData.hasAgreed === true ? 'bg-batja-green text-white' : 'bg-white'}`}>Setuju</button>
+                <button onClick={() => setFormData({...formData, hasAgreed: false})} className={`flex-1 p-2 rounded-lg border ${formData.hasAgreed === false ? 'bg-red-500 text-white' : 'bg-white'}`}>Tidak</button>
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <button onClick={() => setStep(3)} className="flex-1 py-4 rounded-full border border-batja-green font-medium">Kembali</button>
+              <button onClick={handleDaftar} disabled={loading || !formData.hasAgreed} className="flex-[2] bg-batja-green text-batja-beige py-4 rounded-full font-medium shadow-xl disabled:opacity-30">
+                {loading ? "Sedang Mengirim..." : "Kirim Lamaran"}
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
